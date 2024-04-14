@@ -1,0 +1,10 @@
+com\o6no6\bedwars\listener\VillagerListener.class
+com\o6no6\bedwars\custom\ShopItem.class
+com\o6no6\bedwars\listener\InventoryListener.class
+com\o6no6\bedwars\enumerativ\Team.class
+com\o6no6\bedwars\enumerativ\TeamShop.class
+com\o6no6\bedwars\enumerativ\ShopItemList.class
+com\o6no6\bedwars\listener\PlayerListener.class
+com\o6no6\bedwars\manager\VillagerManager.class
+com\o6no6\bedwars\BedWars.class
+com\o6no6\bedwars\listener\PlayerListener$1.class

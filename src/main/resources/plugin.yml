@@ -1,0 +1,4 @@
+name: BedWars
+version: '${project.version}'
+main: com.o6no6.bedwars.BedWars
+api-version: '1.20'
