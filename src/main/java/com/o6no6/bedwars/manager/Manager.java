@@ -2,6 +2,7 @@ package com.o6no6.bedwars.manager;
 
 import com.o6no6.bedwars.BedWars;
 import com.o6no6.bedwars.enume.Bed;
+import com.o6no6.bedwars.enume.DiamondTier;
 import com.o6no6.bedwars.enume.ShopItemList;
 import com.o6no6.bedwars.enume.TeamShop;
 import org.bukkit.*;
@@ -13,6 +14,7 @@ import org.bukkit.entity.Villager;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -20,7 +22,12 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -103,6 +110,8 @@ public class Manager implements Listener {
         Player player = event.getPlayer();
         World world = player.getWorld();
 
+        setupScoreboard(player);
+
         if (world.getName().equals(WORLD)) {
             player.teleport(new Location(world, 0, 143, 0));
             playerCount++;
@@ -112,6 +121,61 @@ public class Manager implements Listener {
             }
         }
     }
+
+    private void setupScoreboard(Player player) {
+        Scoreboard scoreboard = Bukkit.getScoreboardManager().getNewScoreboard();
+        Objective objective = scoreboard.registerNewObjective("ScoreboardPrincipale", "BedWars", ChatColor.BOLD + "BEDWARS");
+        objective.setDisplaySlot(DisplaySlot.SIDEBAR);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
+        String date = dateFormat.format(new Date());
+
+        setScore(objective, date + ChatColor.GRAY + " #1/15" + ChatColor.RESET, 15);
+        setScore(objective, " ", 14);
+        setScore(objective, "Diamante II" + ChatColor.AQUA + " 4:30" + ChatColor.RESET, 13);
+        setScore(objective, " ", 12);
+
+        updateBedStatus(objective);
+
+        setScore(objective, "", 3);
+        setScore(objective, ChatColor.YELLOW + "mc.heroforge.it", 2);
+
+        player.setScoreboard(scoreboard);
+    }
+
+    private void updateScoreboards() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            updateScoreboard(player);
+        }
+
+    }
+    private void updateScoreboard(Player player) {
+        Scoreboard scoreboard = player.getScoreboard();
+        Objective objective = scoreboard.getObjective("ScoreboardPrincipale");
+        if (objective != null) {
+            objective.unregister(); // Rimuovi l'obiettivo corrente per ricrearlo con le nuove informazioni
+        }
+
+        setupScoreboard(player); // Ricrea la scoreboard aggiornata per il giocatore
+    }
+
+    private void setScore(Objective objective, String entry, int score) {
+        objective.getScore(entry).setScore(score);
+    }
+
+    private void updateBedStatus(Objective objective) {
+        for (Bed bed: Bed.values()){
+            setScore(objective, bed.getText() + ChatColor.RESET + (!bed.isDestroyed() ? (ChatColor.GREEN + " ✔") : (ChatColor.RED + " ✖")), 11 - bed.ordinal());
+
+        }
+    }
+
+    private void updateTierDiamond(Objective objective) {
+
+
+
+    }
+
 
     // Gestisce l'interazione di un giocatore con un villager
     @EventHandler
@@ -159,12 +223,16 @@ public class Manager implements Listener {
     public void onBreakBlock(BlockBreakEvent e){
         Block block = e.getBlock();
 
+
         for (Bed bed : Bed.values()) {
             if (block.getType() == bed.getMaterial()) {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
                 }
 
+                bed.setDestroyed(true);
+
+                updateScoreboards();
                 bedWars.getServer().broadcastMessage(""+bed.getText());
 
             }
@@ -185,6 +253,7 @@ public class Manager implements Listener {
                 if (--timeLeft < 0) {
                     setupVillagers();
                     teleportPlayers();
+
                     playerCount = 0;
                     cancel();
                 }
@@ -234,6 +303,18 @@ public class Manager implements Listener {
         if (!lastSoundPlayTime.containsKey(playerUUID) || currentTime - lastSoundPlayTime.get(playerUUID) >= soundCooldown) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
             lastSoundPlayTime.put(playerUUID, currentTime);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+
+        if (player.equals(player) && Bed.RED_BED.isDestroyed()) { // Verifica se il giocatore morto è il giocatore spettatore
+            // Imposta il giocatore spettatore in modalità spettatore
+            player.setGameMode(GameMode.SPECTATOR);
+            // Teletrasporta il giocatore spettatore alla posizione di spettatore
+
         }
     }
 }
