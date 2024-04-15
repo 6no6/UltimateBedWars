@@ -34,12 +34,12 @@ import java.util.UUID;
 
 public class Manager implements Listener {
 
-    private static final String WORLD = "world";
-    private final BedWars bedWars;
-    private final Map<UUID, Long> lastSoundPlayTime = new HashMap<>();
-    private final long soundCooldown = 500;
-    private int playerCount = 0;
-    private BukkitTask timerTask;
+    public static final String WORLD = "world";
+    public final BedWars bedWars;
+    public final Map<UUID, Long> lastSoundPlayTime = new HashMap<>();
+    public final long soundCooldown = 500;
+    public int playerCount = 0;
+    public BukkitTask timerTask;
 
     public Manager(BedWars bedWars) {
         this.bedWars = bedWars;
@@ -53,26 +53,25 @@ public class Manager implements Listener {
             return;
         }
 
+
+        String[] colors = {"white", "orange", "yellow", "cyan", "purple", "blue", "green", "red"};
+
         for (TeamShop teamShop : TeamShop.values()) {
-            double xOffset = calculateXOffset(); // Calcola un offset per la posizione X
-            Location spawnLocation = new Location(world, 85 + xOffset, 72, 32);
+            Location spawnLocation = new Location(world, bedWars.getConfig().getDouble("positionvillager."+colors[teamShop.ordinal()]+".x"), 72,
+                    bedWars.getConfig().getDouble("positionvillager."+teamShop.getColor()+".z"));
 
             // Spawn del Villager
             Villager villager = (Villager) world.spawnEntity(spawnLocation, EntityType.VILLAGER);
             configureVillager(villager, teamShop.getShopName());
 
             // Spawn dell'ArmorStand
-            Location standLocation = new Location(world, 85 + xOffset, 71.75, 32);
+            Location standLocation = new Location(world, bedWars.getConfig().getDouble("positionvillager."+colors[teamShop.ordinal()]+".x"), 71.75,
+                    bedWars.getConfig().getDouble("positionvillager."+colors[teamShop.ordinal()]+".z"));
             ArmorStand stand = (ArmorStand) world.spawnEntity(standLocation, EntityType.ARMOR_STAND);
             configureStand(stand);
         }
     }
 
-    // Calcola un offset dinamico per la posizione X dei villager
-    private double calculateXOffset() {
-        // In questa versione di esempio, l'offset X è fisso a 1
-        return 1;
-    }
 
     // Apre un'inventario personalizzato per un giocatore
     public void openCustomInventory(Player player, String shopname) {
@@ -143,7 +142,7 @@ public class Manager implements Listener {
         player.setScoreboard(scoreboard);
     }
 
-    private void updateScoreboards() {
+    protected void updateScoreboards() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             updateScoreboard(player);
         }
@@ -177,68 +176,7 @@ public class Manager implements Listener {
     }
 
 
-    // Gestisce l'interazione di un giocatore con un villager
-    @EventHandler
-    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
-        if (event.getRightClicked().getType() == EntityType.VILLAGER) {
-            Player player = event.getPlayer();
-            openCustomInventory(player, event.getRightClicked().getName());
-            event.setCancelled(true);
-        }
-    }
 
-    // Gestisce il click sugli oggetti nell'inventario personalizzato
-    @EventHandler
-    public void onInventoryClick(InventoryClickEvent event) {
-        // Controlla se l'inventario aperto corrisponde a un negozio di una squadra
-        for (TeamShop teamShop : TeamShop.values()) {
-            if (ChatColor.translateAlternateColorCodes('&', event.getView().getTitle())
-                    .equals(teamShop.getShopName()) && event.getCurrentItem() != null) {
-
-                long currentTime = System.currentTimeMillis();
-                Player player = (Player) event.getWhoClicked();
-                UUID playerUUID = player.getUniqueId();
-
-                // Itera sugli oggetti del negozio della squadra
-                for (ShopItemList item : ShopItemList.values()) {
-                    if (event.getRawSlot() == item.getSlot()) {
-                        // Rimuove l'oggetto dall'inventario del giocatore
-                        HashMap<Integer, ItemStack> removedItems = player.getInventory().removeItem(item.getSellItem());
-
-                        if (removedItems.isEmpty()) {
-                            // Suono e effetti quando l'acquisto viene effettuato con successo
-                            handleSuccessfulPurchase(player, playerUUID, currentTime, item);
-                        } else {
-                            // Suono quando l'acquisto fallisce per mancanza di spazio nell'inventario
-                            handleFailedPurchase(player, playerUUID, currentTime);
-                        }
-                    }
-                }
-                event.setCancelled(true);
-            }
-        }
-    }
-
-    @EventHandler
-    public void onBreakBlock(BlockBreakEvent e){
-        Block block = e.getBlock();
-
-
-        for (Bed bed : Bed.values()) {
-            if (block.getType() == bed.getMaterial()) {
-                for (Player player : Bukkit.getOnlinePlayers()) {
-                    player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
-                }
-
-                bed.setDestroyed(true);
-
-                updateScoreboards();
-                bedWars.getServer().broadcastMessage(""+bed.getText());
-
-            }
-        }
-
-    }
 
     // Avvia un timer per il respawn dei villager
     private void startTimer(Player player) {
@@ -285,7 +223,7 @@ public class Manager implements Listener {
     }
 
     // Gestisce l'acquisto riuscito di un oggetto
-    private void handleSuccessfulPurchase(Player player, UUID playerUUID, long currentTime, ShopItemList item) {
+    protected void handleSuccessfulPurchase(Player player, UUID playerUUID, long currentTime, ShopItemList item) {
         if (!lastSoundPlayTime.containsKey(playerUUID) || currentTime - lastSoundPlayTime.get(playerUUID) >= soundCooldown) {
             player.playSound(player.getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f);
             lastSoundPlayTime.put(playerUUID, currentTime);
@@ -299,22 +237,12 @@ public class Manager implements Listener {
     }
 
     // Gestisce l'acquisto fallito di un oggetto
-    private void handleFailedPurchase(Player player, UUID playerUUID, long currentTime) {
+    protected void handleFailedPurchase(Player player, UUID playerUUID, long currentTime) {
         if (!lastSoundPlayTime.containsKey(playerUUID) || currentTime - lastSoundPlayTime.get(playerUUID) >= soundCooldown) {
             player.playSound(player.getLocation(), Sound.UI_BUTTON_CLICK, 1.0f, 1.0f);
             lastSoundPlayTime.put(playerUUID, currentTime);
         }
     }
 
-    @EventHandler
-    public void onPlayerDeath(PlayerDeathEvent event) {
-        Player player = event.getEntity();
 
-        if (player.equals(player) && Bed.RED_BED.isDestroyed()) { // Verifica se il giocatore morto è il giocatore spettatore
-            // Imposta il giocatore spettatore in modalità spettatore
-            player.setGameMode(GameMode.SPECTATOR);
-            // Teletrasporta il giocatore spettatore alla posizione di spettatore
-
-        }
-    }
 }

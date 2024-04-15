@@ -1,4 +1,37 @@
 worldname: "world"
 countdown: 60
 
+positionvillager:
+  white:
+    x: -35.5
+    y: 72.0
+    z: 98.7
+  orange:
+    x: -97.5
+    y: 72.0
+    z: -35.7
+  yellow:
+    x: 98.5
+    y: 72.0
+    z: 36.7
+  cyan:
+    x: 24.5
+    y: 72.0
+    z: 98.7
+  purple:
+    x: -97.5
+    y: 72.0
+    z: 24.3
+  blue:
+    x: 36.7
+    y: 72.0
+    z: -97.7
+  green:
+    x: 98.5
+    y: 72.0
+    z: -23.3
+  red:
+    x: -23.3
+    y: 72.0
+    z: -97.7
 
