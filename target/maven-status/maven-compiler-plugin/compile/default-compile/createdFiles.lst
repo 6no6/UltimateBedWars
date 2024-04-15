@@ -4,5 +4,6 @@ com\o6no6\bedwars\enume\Team.class
 com\o6no6\bedwars\enume\ShopItemList.class
 com\o6no6\bedwars\enume\TeamShop.class
 com\o6no6\bedwars\manager\Manager$1.class
+com\o6no6\bedwars\enume\DiamondTier.class
 com\o6no6\bedwars\BedWars.class
 com\o6no6\bedwars\manager\Manager.class
