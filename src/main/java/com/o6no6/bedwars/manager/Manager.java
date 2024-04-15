@@ -142,9 +142,99 @@ public class Manager implements Listener {
         player.setScoreboard(scoreboard);
     }
 
-    protected void updateScoreboards() {
+    private void updateScoreboards() {
         for (Player player : Bukkit.getOnlinePlayers()) {
             updateScoreboard(player);
+        }
+
+    }
+    private void updateScoreboard(Player player) {
+        Scoreboard scoreboard = player.getScoreboard();
+        Objective objective = scoreboard.getObjective("ScoreboardPrincipale");
+        if (objective != null) {
+            objective.unregister(); // Rimuovi l'obiettivo corrente per ricrearlo con le nuove informazioni
+        }
+
+        setupScoreboard(player); // Ricrea la scoreboard aggiornata per il giocatore
+    }
+
+    private void setScore(Objective objective, String entry, int score) {
+        objective.getScore(entry).setScore(score);
+    }
+
+    private void updateBedStatus(Objective objective) {
+        for (Bed bed: Bed.values()){
+            setScore(objective, bed.getText() + ChatColor.RESET + (!bed.isDestroyed() ? (ChatColor.GREEN + " ✔") : (ChatColor.RED + " ✖")), 11 - bed.ordinal());
+
+        }
+    }
+
+    private void updateTierDiamond(Objective objective) {
+
+
+
+    }
+
+
+    // Gestisce l'interazione di un giocatore con un villager
+    @EventHandler
+    public void onPlayerInteractEntity(PlayerInteractEntityEvent event) {
+        if (event.getRightClicked().getType() == EntityType.VILLAGER) {
+            Player player = event.getPlayer();
+            openCustomInventory(player, event.getRightClicked().getName());
+            event.setCancelled(true);
+        }
+    }
+
+    // Gestisce il click sugli oggetti nell'inventario personalizzato
+    @EventHandler
+    public void onInventoryClick(InventoryClickEvent event) {
+        // Controlla se l'inventario aperto corrisponde a un negozio di una squadra
+        for (TeamShop teamShop : TeamShop.values()) {
+            if (ChatColor.translateAlternateColorCodes('&', event.getView().getTitle())
+                    .equals(teamShop.getShopName()) && event.getCurrentItem() != null) {
+
+                long currentTime = System.currentTimeMillis();
+                Player player = (Player) event.getWhoClicked();
+                UUID playerUUID = player.getUniqueId();
+
+                // Itera sugli oggetti del negozio della squadra
+                for (ShopItemList item : ShopItemList.values()) {
+                    if (event.getRawSlot() == item.getSlot()) {
+                        // Rimuove l'oggetto dall'inventario del giocatore
+                        HashMap<Integer, ItemStack> removedItems = player.getInventory().removeItem(item.getSellItem());
+
+                        if (removedItems.isEmpty()) {
+                            // Suono e effetti quando l'acquisto viene effettuato con successo
+                            handleSuccessfulPurchase(player, playerUUID, currentTime, item);
+                        } else {
+                            // Suono quando l'acquisto fallisce per mancanza di spazio nell'inventario
+                            handleFailedPurchase(player, playerUUID, currentTime);
+                        }
+                    }
+                }
+                event.setCancelled(true);
+            }
+        }
+    }
+
+    @EventHandler
+    public void onBreakBlock(BlockBreakEvent e){
+        Block block = e.getBlock();
+
+
+        for (Bed bed : Bed.values()) {
+            if (block.getType() == bed.getMaterial()) {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    player.playSound(player.getLocation(), Sound.ENTITY_ENDER_DRAGON_GROWL, 1.0f, 1.0f);
+                }
+
+                bed.setDestroyed(true);
+
+                updateScoreboards();
+                bedWars.getServer().broadcastMessage(""+bed.getText());
+
+            }
         }
 
     }
@@ -244,5 +334,19 @@ public class Manager implements Listener {
         }
     }
 
+<<<<<<< HEAD
 
+=======
+    @EventHandler
+    public void onPlayerDeath(PlayerDeathEvent event) {
+        Player player = event.getEntity();
+
+        if (player.equals(player) && Bed.RED_BED.isDestroyed()) { // Verifica se il giocatore morto è il giocatore spettatore
+            // Imposta il giocatore spettatore in modalità spettatore
+            player.setGameMode(GameMode.SPECTATOR);
+            // Teletrasporta il giocatore spettatore alla posizione di spettatore
+
+        }
+    }
+>>>>>>> 9938c353b3d709fa783b3d84b26242714c8cb2ea
 }
